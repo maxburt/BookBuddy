@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>EPUB Reader</title>
+
+    <!-- JSZip (required for epub.js to unzip .epub) -->
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <!-- epub.js -->
+    <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+
+    <style>
+        html, body {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+          overflow: hidden;
+        }
+
+        #viewer {
+          height: 100%;
+          width: 100%;
+        }
+
+        /* Tap zones for navigation */
+        #prevTap, #nextTap {
+          position: fixed;
+          top: 0;
+          height: 100%;
+          width: 30%;
+          z-index: 10;
+        }
+
+        #prevTap {
+          left: 0;
+        }
+
+        #nextTap {
+          right: 0;
+        }
+    </style>
+</head>
+<body>
+<div id="viewer"></div>
+<div id="prevTap"></div>
+<div id="nextTap"></div>
+
+<script>
+    let rendition;
+    let book;
+    let touchStartX = null;
+
+    window.loadBookBase64 = function(base64Data) {
+      const binary = atob(base64Data);
+      const len = binary.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+
+      const blob = new Blob([bytes], { type: "application/epub+zip" });
+      book = ePub(blob);
+      rendition = book.renderTo("viewer", {
+        width: "100%",
+        height: "100%",
+        flow: "paginated",
+        manager: "continuous"
+      });
+
+      // Load saved position if available
+      const lastLoc = (typeof localStorage !== "undefined")
+        ? localStorage.getItem("lastLocation")
+        : null;
+
+      rendition.display(lastLoc || undefined);
+
+      // Save location when moved
+      rendition.on("relocated", (location) => {
+        if (typeof localStorage !== "undefined") {
+          localStorage.setItem("lastLocation", location.start.cfi);
+        }
+      });
+
+      // Add swipe listeners to each rendered view
+      rendition.on("rendered", () => {
+        rendition.views().forEach((view) => {
+          const doc = view.document;
+          doc.addEventListener("touchstart", onTouchStart, false);
+          doc.addEventListener("touchend", onTouchEnd, false);
+        });
+      });
+    };
+
+    function nextPage() {
+      if (rendition) rendition.next();
+    }
+
+    function prevPage() {
+      if (rendition) rendition.prev();
+    }
+
+    // Tap zone listeners
+    document.getElementById("prevTap").addEventListener("click", prevPage);
+    document.getElementById("nextTap").addEventListener("click", nextPage);
+
+    // Swipe handling
+    function onTouchStart(e) {
+      touchStartX = e.changedTouches[0].screenX;
+    }
+
+    function onTouchEnd(e) {
+      if (!touchStartX) return;
+      const dx = e.changedTouches[0].screenX - touchStartX;
+      if (dx > 50) prevPage();
+      else if (dx < -50) nextPage();
+      touchStartX = null;
+    }
+</script>
+</body>
+</html>
