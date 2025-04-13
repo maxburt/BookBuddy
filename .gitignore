@@ -1,0 +1,4 @@
+*.keystore
+*.env
+secrets.properties
+google-services.json
