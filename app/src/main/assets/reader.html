@@ -6,6 +6,27 @@
     <script src="www/jszip.min.js"></script>
     <script src="www/epub.min.js"></script>
     <style>
+        /* Visual gradient overlay at the top */
+        #topGradient {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 64px;
+          background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent);
+          z-index: 3;
+          pointer-events: none; /* This element just provides visual feedback */
+          display: block;
+        }
+        /* Tap zone for showing/hiding toolbar */
+        #topTapZone {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          height: 48px; /* adjust as needed */
+          z-index: 5;
+        }
+        /* Back button styling */
         #backBtn {
           background: none;
           border: none;
@@ -14,6 +35,7 @@
           margin-right: 12px;
           cursor: pointer;
         }
+        /* Toolbar header, initially hidden */
         #header {
           position: fixed;
           top: 0;
@@ -21,31 +43,37 @@
           height: 48px;
           background-color: #222;
           color: white;
-          display: flex;
           align-items: center;
           padding: 0 16px;
           z-index: 1000;
           font-family: sans-serif;
+          display: none;
         }
         #bookTitle {
           font-weight: bold;
           font-size: 18px;
+          flex: 1;
         }
-
+        /* Table of Contents dropdown styling */
+        #tocDropdown {
+          background: #222;
+          color: white;
+          border: 1px solid #444;
+          padding: 4px;
+          margin-left: 8px;
+        }
         html, body {
           margin: 0;
           padding: 0;
           height: 100%;
           overflow: hidden;
         }
-
         #viewer {
-            width: 100%;
-            height: calc(100% - 48px);
-            margin-top: 48px;
+          width: 100%;
+          height: calc(100% - 48px);
+          margin-top: 48px;
         }
-
-        /* Tap zones for navigation */
+        /* Tap zones for page navigation */
         #prevTap, #nextTap {
           position: fixed;
           top: 0;
@@ -53,22 +81,29 @@
           width: 30%;
           z-index: 10;
         }
-
         #prevTap {
           left: 0;
         }
-
         #nextTap {
           right: 0;
         }
     </style>
 </head>
 <body>
+<!-- Toolbar Header -->
 <div id="header">
     <button id="backBtn">← Back</button>
     <span id="bookTitle">BookBuddy Reader</span>
+    <select id="tocDropdown">
+        <option>Loading TOC...</option>
+    </select>
 </div>
+<!-- Gradient overlay and tap zone -->
+<div id="topGradient"></div>
+<div id="topTapZone"></div>
+<!-- Main viewer area -->
 <div id="viewer"></div>
+<!-- Page navigation tap zones -->
 <div id="prevTap"></div>
 <div id="nextTap"></div>
 
@@ -77,6 +112,7 @@
     let book;
     let touchStartX = null;
 
+    // Load the book from a Base64 string
     window.loadBookBase64 = function(base64Data) {
       const binary = atob(base64Data);
       const len = binary.length;
@@ -94,14 +130,13 @@
         manager: "continuous"
       });
 
-      // Load saved position if available
+      // Load saved reading position if available
       const lastLoc = (typeof localStorage !== "undefined")
         ? localStorage.getItem("lastLocation")
         : null;
-
       rendition.display(lastLoc || undefined);
 
-      // Save location when moved
+      // Save location on relocation
       rendition.on("relocated", (location) => {
         if (typeof localStorage !== "undefined") {
           localStorage.setItem("lastLocation", location.start.cfi);
@@ -116,32 +151,62 @@
           doc.addEventListener("touchend", onTouchEnd, false);
         });
       });
+
+      // Load TOC (Table of Contents) after the book is initialized
+      book.loaded.navigation.then(function (nav) {
+        console.log("TOC loaded:", nav.toc);
+        const tocDropdown = document.getElementById("tocDropdown");
+        tocDropdown.innerHTML = ""; // Clear existing items
+
+        if (nav.toc.length === 0) {
+          const noChaptersOption = document.createElement("option");
+          noChaptersOption.textContent = "No chapters found";
+          tocDropdown.appendChild(noChaptersOption);
+          return;
+        }
+
+        nav.toc.forEach((chapter) => {
+          const option = document.createElement("option");
+          option.textContent = chapter.label;
+          option.value = chapter.href;
+          tocDropdown.appendChild(option);
+        });
+
+        // Change chapter when selected
+        tocDropdown.addEventListener("change", function () {
+          const href = tocDropdown.value;
+          if (href && book) {
+            rendition.display(href);
+          }
+        });
+      }).catch((err) => {
+        console.error("Error loading TOC:", err);
+      });
     };
 
+    // Page navigation functions
     function nextPage() {
       if (rendition) rendition.next();
     }
-
     function prevPage() {
       if (rendition) rendition.prev();
     }
 
-    // Tap zone listeners
+    // Tap zones for page navigation
     document.getElementById("prevTap").addEventListener("click", prevPage);
     document.getElementById("nextTap").addEventListener("click", nextPage);
 
-    //Back button
+    // Back button functionality in the toolbar
     document.getElementById("backBtn").addEventListener("click", function() {
       if (window.AndroidInterface && AndroidInterface.onBackPressed) {
         AndroidInterface.onBackPressed();
       }
     });
 
-    // Swipe handling
+    // Swipe handling for page navigation
     function onTouchStart(e) {
       touchStartX = e.changedTouches[0].screenX;
     }
-
     function onTouchEnd(e) {
       if (!touchStartX) return;
       const dx = e.changedTouches[0].screenX - touchStartX;
@@ -149,6 +214,51 @@
       else if (dx < -50) nextPage();
       touchStartX = null;
     }
+
+    // Toolbar auto-show/auto-hide functionality
+    let toolbarTimeout = null;
+    function showToolbar() {
+      const header = document.getElementById("header");
+      header.style.display = "flex";
+      document.getElementById("topGradient").style.display = "block";
+      if (toolbarTimeout) clearTimeout(toolbarTimeout);
+      toolbarTimeout = setTimeout(() => {
+        hideToolbar();
+      }, 3000);
+    }
+    function hideToolbar() {
+      document.getElementById("header").style.display = "none";
+      document.getElementById("topGradient").style.display = "none";
+    }
+
+    // Top tap zone toggles toolbar display
+    document.getElementById("topTapZone").addEventListener("click", () => {
+      const header = document.getElementById("header");
+      const isVisible = header.style.display === "flex";
+      if (isVisible) {
+        hideToolbar();
+      } else {
+        showToolbar();
+      }
+    });
+
+    // Swipe detection for toolbar control
+    let swipeStartY = null;
+    document.addEventListener("touchstart", function (e) {
+      swipeStartY = e.changedTouches[0].screenY;
+    }, false);
+    document.addEventListener("touchend", function (e) {
+      if (swipeStartY === null) return;
+      const dy = e.changedTouches[0].screenY - swipeStartY;
+      if (dy > 50) {
+        // Swiped down to show toolbar
+        showToolbar();
+      } else if (dy < -50) {
+        // Swiped up to hide toolbar
+        hideToolbar();
+      }
+      swipeStartY = null;
+    }, false);
 </script>
 </body>
 </html>
