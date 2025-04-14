@@ -6,6 +6,32 @@
     <script src="www/jszip.min.js"></script>
     <script src="www/epub.min.js"></script>
     <style>
+        #backBtn {
+          background: none;
+          border: none;
+          color: white;
+          font-size: 18px;
+          margin-right: 12px;
+          cursor: pointer;
+        }
+        #header {
+          position: fixed;
+          top: 0;
+          width: 100%;
+          height: 48px;
+          background-color: #222;
+          color: white;
+          display: flex;
+          align-items: center;
+          padding: 0 16px;
+          z-index: 1000;
+          font-family: sans-serif;
+        }
+        #bookTitle {
+          font-weight: bold;
+          font-size: 18px;
+        }
+
         html, body {
           margin: 0;
           padding: 0;
@@ -14,8 +40,9 @@
         }
 
         #viewer {
-          height: 100%;
-          width: 100%;
+            width: 100%;
+            height: calc(100% - 48px);
+            margin-top: 48px;
         }
 
         /* Tap zones for navigation */
@@ -37,6 +64,10 @@
     </style>
 </head>
 <body>
+<div id="header">
+    <button id="backBtn">← Back</button>
+    <span id="bookTitle">BookBuddy Reader</span>
+</div>
 <div id="viewer"></div>
 <div id="prevTap"></div>
 <div id="nextTap"></div>
@@ -98,6 +129,13 @@
     // Tap zone listeners
     document.getElementById("prevTap").addEventListener("click", prevPage);
     document.getElementById("nextTap").addEventListener("click", nextPage);
+
+    //Back button
+    document.getElementById("backBtn").addEventListener("click", function() {
+      if (window.AndroidInterface && AndroidInterface.onBackPressed) {
+        AndroidInterface.onBackPressed();
+      }
+    });
 
     // Swipe handling
     function onTouchStart(e) {
