@@ -81,11 +81,17 @@ class BookDetailFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            viewModel.addBookToUserLibrary(currentUser.uid, currentBook) { success ->
-                if (success) {
-                    Toast.makeText(requireContext(), "Book added to your library", Toast.LENGTH_SHORT).show()
+            viewModel.checkIfUserHasBook(currentBook.id, currentUser.uid) { alreadyHasBook ->
+                if (alreadyHasBook) {
+                    Toast.makeText(requireContext(), "This book is already in your library", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(requireContext(), "Failed to download book", Toast.LENGTH_SHORT).show()
+                    viewModel.addBookToUserLibrary(currentUser.uid, currentBook) { success ->
+                        if (success) {
+                            Toast.makeText(requireContext(), "Book added to your library", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(requireContext(), "Failed to download book", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 }
             }
         }

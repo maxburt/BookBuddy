@@ -57,6 +57,21 @@ class BookDetailViewModel : ViewModel() {
             }
     }
 
+    fun checkIfUserHasBook(bookId: String, userId: String, onResult: (Boolean) -> Unit) {
+        db.collection("users")
+            .document(userId)
+            .collection("library")
+            .document(bookId)
+            .get()
+            .addOnSuccessListener { document ->
+                onResult(document.exists())
+            }
+            .addOnFailureListener { e ->
+                Log.e("BookDetailVM", "Error checking if book exists: ${e.message}", e)
+                onResult(false)
+            }
+    }
+
     fun addBookToUserLibrary(userId: String, book: Book, onComplete: (Boolean) -> Unit) {
         val data = hashMapOf(
             "bookId" to book.id,
