@@ -77,7 +77,7 @@ class BookDetailViewModel : ViewModel() {
             "bookId" to book.id,
             "timestamp" to System.currentTimeMillis(),
             "title" to book.title,
-            "progress" to 0,
+            "progress" to "",
             "highlights" to hashMapOf<String, Any>()
         )
 
