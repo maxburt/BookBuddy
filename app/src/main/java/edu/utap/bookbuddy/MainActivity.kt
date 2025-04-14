@@ -16,7 +16,7 @@ import edu.utap.bookbuddy.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-    private lateinit var authUser: AuthUser
+    lateinit var authUser: AuthUser
     private lateinit var navController: NavController
     private lateinit var appBarConfig: AppBarConfiguration
     private var showMenu = true

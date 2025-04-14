@@ -17,7 +17,7 @@ class SettingsFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_settings, container, false)
 
         view.findViewById<Button>(R.id.logoutButton).setOnClickListener {
-            Firebase.auth.signOut()
+            (activity as? MainActivity)?.authUser?.logout()
         }
 
         return view

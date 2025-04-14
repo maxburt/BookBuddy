@@ -9,7 +9,7 @@ import com.google.firebase.ktx.Firebase
 
 class LibraryViewModel : ViewModel() {
     private val db = Firebase.firestore
-    private val booksRepo = BooksRepository()
+    private val booksRepo = BooksRepository
 
     private val _libraryBooks = MutableLiveData<List<Book>>()
     val libraryBooks: LiveData<List<Book>> = _libraryBooks

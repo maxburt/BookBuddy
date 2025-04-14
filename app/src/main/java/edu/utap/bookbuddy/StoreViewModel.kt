@@ -6,7 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
 class StoreViewModel : ViewModel() {
-    private val booksRepo = BooksRepository()
+    private val booksRepo = BooksRepository
     private val _storeBooks = MutableLiveData<List<Book>>()
     val storeBooks: LiveData<List<Book>> = _storeBooks
 
