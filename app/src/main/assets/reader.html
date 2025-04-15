@@ -93,7 +93,12 @@
 <!-- Toolbar Header -->
 <div id="header">
     <button id="backBtn">← Back</button>
-    <span id="bookTitle">BookBuddy Reader</span>
+    <select id="fontSizeSelect">
+        <option value="80%">Small</option>
+        <option value="100%" selected>Normal</option>
+        <option value="120%">Large</option>
+        <option value="150%">Extra Large</option>
+    </select>
     <select id="tocDropdown">
         <option>Loading TOC...</option>
     </select>
@@ -224,7 +229,7 @@
       if (toolbarTimeout) clearTimeout(toolbarTimeout);
       toolbarTimeout = setTimeout(() => {
         hideToolbar();
-      }, 3000);
+      }, 6000);
     }
     function hideToolbar() {
       document.getElementById("header").style.display = "none";
@@ -259,6 +264,13 @@
       }
       swipeStartY = null;
     }, false);
+
+    document.getElementById("fontSizeSelect").addEventListener("change", function () {
+      const size = this.value;
+      rendition.themes.fontSize(size);
+    });
+
+
 </script>
 </body>
 </html>
