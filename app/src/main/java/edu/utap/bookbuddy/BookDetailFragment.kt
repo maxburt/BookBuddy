@@ -53,8 +53,11 @@ class BookDetailFragment : Fragment() {
         viewModel.reviews.observe(viewLifecycleOwner) { reviews ->
             if (reviews.isEmpty()) {
                 binding.reviewRecycler.visibility = View.GONE
+                binding.noReviewsText.visibility = View.VISIBLE
             } else {
                 val adapter = ReviewAdapter(reviews)
+                binding.noReviewsText.visibility = View.GONE
+
                 binding.reviewRecycler.adapter = adapter
                 binding.reviewRecycler.layoutManager = LinearLayoutManager(requireContext())
                 binding.reviewRecycler.visibility = View.VISIBLE
