@@ -111,11 +111,11 @@
 <!-- Page navigation tap zones -->
 <div id="prevTap"></div>
 <div id="nextTap"></div>
-
 <script>
     let rendition;
     let book;
     let touchStartX = null;
+    let hasInitiallyRelocated = false; // 🔑 prevent premature save
 
     // Load the book from a Base64 string
     window.loadBookBase64 = function(base64Data) {
@@ -135,16 +135,35 @@
         manager: "continuous"
       });
 
-      // Load saved reading position if available
-      const lastLoc = (typeof localStorage !== "undefined")
-        ? localStorage.getItem("lastLocation")
-        : null;
-      rendition.display(lastLoc || undefined);
+      // Once the book is ready, resume from last location
+      book.ready.then(() => {
+        const key = `bookbuddy_location_${book.key()}`;
+        const lastLoc = (typeof localStorage !== "undefined")
+          ? localStorage.getItem(key)
+          : null;
 
-      // Save location on relocation
+        rendition.display(lastLoc || undefined);
+      });
+
+      // Save location on relocation (but skip first)
       rendition.on("relocated", (location) => {
+        const cfi = location.start.cfi;
+
+        if (!hasInitiallyRelocated) {
+          hasInitiallyRelocated = true;
+          console.log("Initial relocation (skipping save):", cfi);
+          return;
+        }
+
+        console.log("Saving new CFI:", cfi);
+
+        const key = `bookbuddy_location_${book.key()}`;
         if (typeof localStorage !== "undefined") {
-          localStorage.setItem("lastLocation", location.start.cfi);
+          localStorage.setItem(key, cfi);
+        }
+
+        if (window.AndroidInterface && AndroidInterface.saveProgress) {
+          AndroidInterface.saveProgress(cfi);
         }
       });
 
@@ -159,9 +178,8 @@
 
       // Load TOC (Table of Contents) after the book is initialized
       book.loaded.navigation.then(function (nav) {
-        console.log("TOC loaded:", nav.toc);
         const tocDropdown = document.getElementById("tocDropdown");
-        tocDropdown.innerHTML = ""; // Clear existing items
+        tocDropdown.innerHTML = "";
 
         if (nav.toc.length === 0) {
           const noChaptersOption = document.createElement("option");
@@ -177,7 +195,6 @@
           tocDropdown.appendChild(option);
         });
 
-        // Change chapter when selected
         tocDropdown.addEventListener("change", function () {
           const href = tocDropdown.value;
           if (href && book) {
@@ -189,29 +206,27 @@
       });
     };
 
-    // Page navigation functions
     function nextPage() {
       if (rendition) rendition.next();
     }
+
     function prevPage() {
       if (rendition) rendition.prev();
     }
 
-    // Tap zones for page navigation
     document.getElementById("prevTap").addEventListener("click", prevPage);
     document.getElementById("nextTap").addEventListener("click", nextPage);
 
-    // Back button functionality in the toolbar
     document.getElementById("backBtn").addEventListener("click", function() {
       if (window.AndroidInterface && AndroidInterface.onBackPressed) {
         AndroidInterface.onBackPressed();
       }
     });
 
-    // Swipe handling for page navigation
     function onTouchStart(e) {
       touchStartX = e.changedTouches[0].screenX;
     }
+
     function onTouchEnd(e) {
       if (!touchStartX) return;
       const dx = e.changedTouches[0].screenX - touchStartX;
@@ -220,7 +235,6 @@
       touchStartX = null;
     }
 
-    // Toolbar auto-show/auto-hide functionality
     let toolbarTimeout = null;
     function showToolbar() {
       const header = document.getElementById("header");
@@ -231,12 +245,12 @@
         hideToolbar();
       }, 6000);
     }
+
     function hideToolbar() {
       document.getElementById("header").style.display = "none";
       document.getElementById("topGradient").style.display = "none";
     }
 
-    // Top tap zone toggles toolbar display
     document.getElementById("topTapZone").addEventListener("click", () => {
       const header = document.getElementById("header");
       const isVisible = header.style.display === "flex";
@@ -247,7 +261,6 @@
       }
     });
 
-    // Swipe detection for toolbar control
     let swipeStartY = null;
     document.addEventListener("touchstart", function (e) {
       swipeStartY = e.changedTouches[0].screenY;
@@ -255,13 +268,8 @@
     document.addEventListener("touchend", function (e) {
       if (swipeStartY === null) return;
       const dy = e.changedTouches[0].screenY - swipeStartY;
-      if (dy > 50) {
-        // Swiped down to show toolbar
-        showToolbar();
-      } else if (dy < -50) {
-        // Swiped up to hide toolbar
-        hideToolbar();
-      }
+      if (dy > 50) showToolbar();
+      else if (dy < -50) hideToolbar();
       swipeStartY = null;
     }, false);
 
@@ -269,8 +277,6 @@
       const size = this.value;
       rendition.themes.fontSize(size);
     });
-
-
 </script>
 </body>
 </html>
