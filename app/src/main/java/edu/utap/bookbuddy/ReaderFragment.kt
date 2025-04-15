@@ -89,22 +89,23 @@ class ReaderFragment : Fragment() {
                 val savedProgress = progressDoc.getString("progress") ?: ""
                 Log.d("ReaderFragment", "Loaded saved progress: $savedProgress")
 
-                // Step 2: Fetch font size from user profile
+                // Step 2: Fetch font & theme preferences
                 db.collection("users")
                     .document(userId)
                     .get()
                     .addOnSuccessListener { userDoc ->
                         val fontSize = userDoc.getString("fontSize") ?: "100%"
                         val fontType = userDoc.getString("fontType") ?: "sans-serif"
-                        Log.d("ReaderFragment", "Loaded font size: $fontSize")
+                        val theme = userDoc.getString("theme") ?: "light"
+                        Log.d("ReaderFragment", "Loaded font size: $fontSize, font: $fontType, theme: $theme")
 
                         webView.webViewClient = object : WebViewClient() {
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 super.onPageFinished(view, url)
                                 val js = if (savedProgress.isNotBlank()) {
-                                    "loadBookBase64('$epubBase64', '$savedProgress', '$fontSize', '$fontType');"
+                                    "loadBookBase64('$epubBase64', '$savedProgress', '$fontSize', '$fontType', '$theme');"
                                 } else {
-                                    "loadBookBase64('$epubBase64', '', '$fontSize', '$fontType');"
+                                    "loadBookBase64('$epubBase64', '', '$fontSize', '$fontType', '$theme');"
                                 }
                                 webView.evaluateJavascript(js, null)
                             }
@@ -120,6 +121,7 @@ class ReaderFragment : Fragment() {
                     }
             }
     }
+
     override fun onDestroyView() {
         super.onDestroyView()
         (requireActivity() as? AppCompatActivity)?.supportActionBar?.show()

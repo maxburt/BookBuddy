@@ -36,7 +36,36 @@ class BookDetailViewModel : ViewModel() {
     fun submitReview(bookId: String, review: Review, onComplete: (Boolean) -> Unit) {
         reviewsRepo.addReview(bookId, review) { success ->
             if (success) {
-                fetchReviews(bookId) // Refresh
+                fetchReviews(bookId) // Refresh UI
+
+                // Recalculate average rating and update Firestore
+                db.collection("books")
+                    .document(bookId)
+                    .collection("reviews")
+                    .get()
+                    .addOnSuccessListener { snapshot ->
+                        val allRatings = snapshot.mapNotNull { it.getDouble("rating") }
+                        val numRatings = allRatings.size
+                        val avgRating = if (numRatings > 0) allRatings.sum() / numRatings else 0.0
+
+                        db.collection("books")
+                            .document(bookId)
+                            .update(
+                                mapOf(
+                                    "avgRating" to avgRating,
+                                    "numRatings" to numRatings
+                                )
+                            )
+                            .addOnSuccessListener {
+                                Log.d("BookDetailVM", "Updated avgRating=$avgRating and numRatings=$numRatings")
+                            }
+                            .addOnFailureListener {
+                                Log.e("BookDetailVM", "Failed to update ratings", it)
+                            }
+                    }
+                    .addOnFailureListener {
+                        Log.e("BookDetailVM", "Failed to recalculate ratings", it)
+                    }
             }
             onComplete(success)
         }
