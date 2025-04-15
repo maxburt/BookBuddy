@@ -95,15 +95,16 @@ class ReaderFragment : Fragment() {
                     .get()
                     .addOnSuccessListener { userDoc ->
                         val fontSize = userDoc.getString("fontSize") ?: "100%"
+                        val fontType = userDoc.getString("fontType") ?: "sans-serif"
                         Log.d("ReaderFragment", "Loaded font size: $fontSize")
 
                         webView.webViewClient = object : WebViewClient() {
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 super.onPageFinished(view, url)
                                 val js = if (savedProgress.isNotBlank()) {
-                                    "loadBookBase64('$epubBase64', '$savedProgress', '$fontSize');"
+                                    "loadBookBase64('$epubBase64', '$savedProgress', '$fontSize', '$fontType');"
                                 } else {
-                                    "loadBookBase64('$epubBase64', '', '$fontSize');"
+                                    "loadBookBase64('$epubBase64', '', '$fontSize', '$fontType');"
                                 }
                                 webView.evaluateJavascript(js, null)
                             }

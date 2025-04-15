@@ -117,7 +117,7 @@
     let touchStartX = null;
     let hasInitiallyRelocated = false;
 
-    window.loadBookBase64 = function(base64Data, savedCfi = "", fontSize = "100%") {
+    window.loadBookBase64 = function(base64Data, savedCfi = "", fontSize = "100%", fontFamily = "sans-serif") {
       const binary = atob(base64Data);
       const len = binary.length;
       const bytes = new Uint8Array(len);
@@ -135,20 +135,20 @@
         manager: "continuous"
       });
 
-      // Set initial font size
-      rendition.themes.fontSize(fontSize);
+      // Apply both font size and font family
+      rendition.themes.default({ body: { "font-size": fontSize, "font-family": fontFamily } });
+
       // Update the spinner to reflect the current font size
-        const fontSizeSelect = document.getElementById("fontSizeSelect");
-        if (fontSizeSelect) {
-          for (let i = 0; i < fontSizeSelect.options.length; i++) {
-            if (fontSizeSelect.options[i].value === fontSize) {
-              fontSizeSelect.selectedIndex = i;
-              break;
-            }
+      const fontSizeSelect = document.getElementById("fontSizeSelect");
+      if (fontSizeSelect) {
+        for (let i = 0; i < fontSizeSelect.options.length; i++) {
+          if (fontSizeSelect.options[i].value === fontSize) {
+            fontSizeSelect.selectedIndex = i;
+            break;
           }
         }
+      }
 
-      // Resume reading position
       book.ready.then(() => {
         const key = `bookbuddy_location_${book.key()}`;
         const localLoc = typeof localStorage !== "undefined" ? localStorage.getItem(key) : null;
