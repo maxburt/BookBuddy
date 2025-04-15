@@ -93,7 +93,6 @@ class AuthUser(private val registry: ActivityResultRegistry) :
                             "uid" to firebaseUser.uid,
                             "name" to nameToUse,
                             "email" to firebaseUser.email,
-                            "fontSize" to 16,
                             "theme" to "light",
                             "favorites" to listOf<String>()
                         )

@@ -73,6 +73,10 @@ class BookDetailFragment : Fragment() {
         binding.bookDescription.text = book.description
         currentBook = book
 
+        // ⭐ Show avg rating and number of ratings
+        binding.ratingDisplay.text = "⭐ ${book.avgRating}"
+        binding.ratingCountText.text = "(${book.numRatings})"
+
         Glide.with(requireContext())
             .load(book.coverUrl)
             .into(binding.bookCover)
