@@ -11,6 +11,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 class SettingsFragment : Fragment() {
 
     private val fontSizes = listOf("80%", "100%", "120%", "150%")
+    private val fontTypes = listOf("sans-serif", "serif", "monospace")
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -20,7 +21,10 @@ class SettingsFragment : Fragment() {
 
         val logoutButton = view.findViewById<Button>(R.id.logoutButton)
         val fontSizeSpinner = view.findViewById<Spinner>(R.id.fontSizeSpinner)
-        fontSizeSpinner.visibility = View.INVISIBLE  // Hide it at first
+        val fontTypeSpinner = view.findViewById<Spinner>(R.id.fontTypeSpinner)
+
+        fontSizeSpinner.visibility = View.INVISIBLE
+        fontTypeSpinner.visibility = View.INVISIBLE
 
         logoutButton.setOnClickListener {
             (activity as? MainActivity)?.authUser?.logout()
@@ -31,23 +35,25 @@ class SettingsFragment : Fragment() {
             val uid = currentUser.uid
             val userDoc = FirebaseFirestore.getInstance().collection("users").document(uid)
 
-            var skipNextSelection = true
+            var skipSizeSelect = true
+            var skipTypeSelect = true
 
             userDoc.get().addOnSuccessListener { document ->
                 val savedSize = document.getString("fontSize") ?: "100%"
-                val index = fontSizes.indexOf(savedSize).takeIf { it >= 0 } ?: 1
+                val savedType = document.getString("fontType") ?: "sans-serif"
 
-                // Only set adapter and visibility after getting saved value
-                val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, fontSizes)
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                fontSizeSpinner.adapter = adapter
-                fontSizeSpinner.setSelection(index)
+                // Font Size Spinner Setup
+                val sizeIndex = fontSizes.indexOf(savedSize).takeIf { it >= 0 } ?: 1
+                val sizeAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, fontSizes)
+                sizeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                fontSizeSpinner.adapter = sizeAdapter
+                fontSizeSpinner.setSelection(sizeIndex)
                 fontSizeSpinner.visibility = View.VISIBLE
 
                 fontSizeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                     override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                        if (skipNextSelection) {
-                            skipNextSelection = false
+                        if (skipSizeSelect) {
+                            skipSizeSelect = false
                             return
                         }
 
@@ -58,6 +64,34 @@ class SettingsFragment : Fragment() {
                             }
                             .addOnFailureListener {
                                 Toast.makeText(requireContext(), "Failed to update font size", Toast.LENGTH_SHORT).show()
+                            }
+                    }
+
+                    override fun onNothingSelected(parent: AdapterView<*>?) {}
+                }
+
+                // Font Type Spinner Setup
+                val typeIndex = fontTypes.indexOf(savedType).takeIf { it >= 0 } ?: 0
+                val typeAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, fontTypes)
+                typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                fontTypeSpinner.adapter = typeAdapter
+                fontTypeSpinner.setSelection(typeIndex)
+                fontTypeSpinner.visibility = View.VISIBLE
+
+                fontTypeSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                    override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                        if (skipTypeSelect) {
+                            skipTypeSelect = false
+                            return
+                        }
+
+                        val selectedType = fontTypes[position]
+                        userDoc.update("fontType", selectedType)
+                            .addOnSuccessListener {
+                                Toast.makeText(requireContext(), "Font type updated", Toast.LENGTH_SHORT).show()
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(requireContext(), "Failed to update font type", Toast.LENGTH_SHORT).show()
                             }
                     }
 

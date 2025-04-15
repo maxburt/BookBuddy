@@ -6,4 +6,9 @@
         <item>Large</item>
         <item>Extra Large</item>
     </string-array>
+    <string-array name="font_type_options">
+        <item>Sans</item>
+        <item>Serif</item>
+        <item>Monospace</item>
+    </string-array>
 </resources>
