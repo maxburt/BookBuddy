@@ -44,13 +44,13 @@ class ReaderFragment : Fragment() {
         val epubBase64 = Base64.encodeToString(epubBytes, Base64.NO_WRAP)
 
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val db = FirebaseFirestore.getInstance()
 
-        // 🔗 JavaScript bridge to handle save + back
+        // Setup JS bridge
         webView.addJavascriptInterface(object {
             @android.webkit.JavascriptInterface
             fun saveProgress(cfi: String) {
-                FirebaseFirestore.getInstance()
-                    .collection("users")
+                db.collection("users")
                     .document(userId)
                     .collection("library")
                     .document(bookId)
@@ -79,55 +79,44 @@ class ReaderFragment : Fragment() {
         val html = requireContext().assets.open("reader.html")
             .bufferedReader().use { it.readText() }
 
-        // 🔄 Fetch saved progress from Firestore
-        FirebaseFirestore.getInstance()
-            .collection("users")
+        // Step 1: Fetch progress
+        db.collection("users")
             .document(userId)
             .collection("library")
             .document(bookId)
             .get()
-            .addOnSuccessListener { document ->
-                val savedProgress = document.getString("progress") ?: ""
+            .addOnSuccessListener { progressDoc ->
+                val savedProgress = progressDoc.getString("progress") ?: ""
                 Log.d("ReaderFragment", "Loaded saved progress: $savedProgress")
 
-                webView.webViewClient = object : WebViewClient() {
-                    override fun onPageFinished(view: WebView?, url: String?) {
-                        super.onPageFinished(view, url)
-                        val js = if (savedProgress.isNotBlank()) {
-                            "loadBookBase64('$epubBase64', '$savedProgress');"
-                        } else {
-                            "loadBookBase64('$epubBase64');"
+                // Step 2: Fetch font size from user profile
+                db.collection("users")
+                    .document(userId)
+                    .get()
+                    .addOnSuccessListener { userDoc ->
+                        val fontSize = userDoc.getString("fontSize") ?: "100%"
+                        Log.d("ReaderFragment", "Loaded font size: $fontSize")
+
+                        webView.webViewClient = object : WebViewClient() {
+                            override fun onPageFinished(view: WebView?, url: String?) {
+                                super.onPageFinished(view, url)
+                                val js = if (savedProgress.isNotBlank()) {
+                                    "loadBookBase64('$epubBase64', '$savedProgress', '$fontSize');"
+                                } else {
+                                    "loadBookBase64('$epubBase64', '', '$fontSize');"
+                                }
+                                webView.evaluateJavascript(js, null)
+                            }
                         }
-                        webView.evaluateJavascript(js, null)
+
+                        webView.loadDataWithBaseURL(
+                            "file:///android_asset/",
+                            html,
+                            "text/html",
+                            "UTF-8",
+                            null
+                        )
                     }
-                }
-
-                webView.loadDataWithBaseURL(
-                    "file:///android_asset/",
-                    html,
-                    "text/html",
-                    "UTF-8",
-                    null
-                )
-            }
-            .addOnFailureListener {
-                Log.e("ReaderFragment", "Failed to load saved progress", it)
-
-                webView.webViewClient = object : WebViewClient() {
-                    override fun onPageFinished(view: WebView?, url: String?) {
-                        super.onPageFinished(view, url)
-                        val js = "loadBookBase64('$epubBase64');"
-                        webView.evaluateJavascript(js, null)
-                    }
-                }
-
-                webView.loadDataWithBaseURL(
-                    "file:///android_asset/",
-                    html,
-                    "text/html",
-                    "UTF-8",
-                    null
-                )
             }
     }
     override fun onDestroyView() {

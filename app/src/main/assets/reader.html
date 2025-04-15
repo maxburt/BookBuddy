@@ -115,10 +115,9 @@
     let rendition;
     let book;
     let touchStartX = null;
-    let hasInitiallyRelocated = false; // 🔑 prevent premature save
+    let hasInitiallyRelocated = false;
 
-    // Load the book from a Base64 string
-    window.loadBookBase64 = function(base64Data) {
+    window.loadBookBase64 = function(base64Data, savedCfi = "", fontSize = "100%") {
       const binary = atob(base64Data);
       const len = binary.length;
       const bytes = new Uint8Array(len);
@@ -128,6 +127,7 @@
 
       const blob = new Blob([bytes], { type: "application/epub+zip" });
       book = ePub(blob);
+
       rendition = book.renderTo("viewer", {
         width: "100%",
         height: "100%",
@@ -135,20 +135,29 @@
         manager: "continuous"
       });
 
-      // Once the book is ready, resume from last location
+      // Set initial font size
+      rendition.themes.fontSize(fontSize);
+      // Update the spinner to reflect the current font size
+        const fontSizeSelect = document.getElementById("fontSizeSelect");
+        if (fontSizeSelect) {
+          for (let i = 0; i < fontSizeSelect.options.length; i++) {
+            if (fontSizeSelect.options[i].value === fontSize) {
+              fontSizeSelect.selectedIndex = i;
+              break;
+            }
+          }
+        }
+
+      // Resume reading position
       book.ready.then(() => {
         const key = `bookbuddy_location_${book.key()}`;
-        const lastLoc = (typeof localStorage !== "undefined")
-          ? localStorage.getItem(key)
-          : null;
-
-        rendition.display(lastLoc || undefined);
+        const localLoc = typeof localStorage !== "undefined" ? localStorage.getItem(key) : null;
+        const startCfi = savedCfi || localLoc || undefined;
+        rendition.display(startCfi);
       });
 
-      // Save location on relocation (but skip first)
       rendition.on("relocated", (location) => {
         const cfi = location.start.cfi;
-
         if (!hasInitiallyRelocated) {
           hasInitiallyRelocated = true;
           console.log("Initial relocation (skipping save):", cfi);
@@ -156,7 +165,6 @@
         }
 
         console.log("Saving new CFI:", cfi);
-
         const key = `bookbuddy_location_${book.key()}`;
         if (typeof localStorage !== "undefined") {
           localStorage.setItem(key, cfi);
@@ -167,7 +175,6 @@
         }
       });
 
-      // Add swipe listeners to each rendered view
       rendition.on("rendered", () => {
         rendition.views().forEach((view) => {
           const doc = view.document;
@@ -176,15 +183,15 @@
         });
       });
 
-      // Load TOC (Table of Contents) after the book is initialized
-      book.loaded.navigation.then(function (nav) {
+      // Load TOC
+      book.loaded.navigation.then((nav) => {
         const tocDropdown = document.getElementById("tocDropdown");
         tocDropdown.innerHTML = "";
 
         if (nav.toc.length === 0) {
-          const noChaptersOption = document.createElement("option");
-          noChaptersOption.textContent = "No chapters found";
-          tocDropdown.appendChild(noChaptersOption);
+          const noChapters = document.createElement("option");
+          noChapters.textContent = "No chapters found";
+          tocDropdown.appendChild(noChapters);
           return;
         }
 
@@ -209,7 +216,6 @@
     function nextPage() {
       if (rendition) rendition.next();
     }
-
     function prevPage() {
       if (rendition) rendition.prev();
     }
@@ -217,7 +223,7 @@
     document.getElementById("prevTap").addEventListener("click", prevPage);
     document.getElementById("nextTap").addEventListener("click", nextPage);
 
-    document.getElementById("backBtn").addEventListener("click", function() {
+    document.getElementById("backBtn").addEventListener("click", function () {
       if (window.AndroidInterface && AndroidInterface.onBackPressed) {
         AndroidInterface.onBackPressed();
       }
@@ -237,8 +243,7 @@
 
     let toolbarTimeout = null;
     function showToolbar() {
-      const header = document.getElementById("header");
-      header.style.display = "flex";
+      document.getElementById("header").style.display = "flex";
       document.getElementById("topGradient").style.display = "block";
       if (toolbarTimeout) clearTimeout(toolbarTimeout);
       toolbarTimeout = setTimeout(() => {
@@ -254,11 +259,8 @@
     document.getElementById("topTapZone").addEventListener("click", () => {
       const header = document.getElementById("header");
       const isVisible = header.style.display === "flex";
-      if (isVisible) {
-        hideToolbar();
-      } else {
-        showToolbar();
-      }
+      if (isVisible) hideToolbar();
+      else showToolbar();
     });
 
     let swipeStartY = null;
