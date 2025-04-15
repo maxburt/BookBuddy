@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">BookBuddy</string>
+    <string-array name="font_size_options">
+        <item>Small</item>
+        <item>Normal</item>
+        <item>Large</item>
+        <item>Extra Large</item>
+    </string-array>
 </resources>
