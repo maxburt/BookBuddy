@@ -22,9 +22,11 @@ class SettingsFragment : Fragment() {
         val logoutButton = view.findViewById<Button>(R.id.logoutButton)
         val fontSizeSpinner = view.findViewById<Spinner>(R.id.fontSizeSpinner)
         val fontTypeSpinner = view.findViewById<Spinner>(R.id.fontTypeSpinner)
+        val themeSwitch = view.findViewById<Switch>(R.id.themeSwitch)
 
         fontSizeSpinner.visibility = View.INVISIBLE
         fontTypeSpinner.visibility = View.INVISIBLE
+        themeSwitch.visibility = View.INVISIBLE
 
         logoutButton.setOnClickListener {
             (activity as? MainActivity)?.authUser?.logout()
@@ -41,6 +43,7 @@ class SettingsFragment : Fragment() {
             userDoc.get().addOnSuccessListener { document ->
                 val savedSize = document.getString("fontSize") ?: "100%"
                 val savedType = document.getString("fontType") ?: "sans-serif"
+                val savedTheme = document.getString("theme") ?: "light"
 
                 // Font Size Spinner Setup
                 val sizeIndex = fontSizes.indexOf(savedSize).takeIf { it >= 0 } ?: 1
@@ -96,6 +99,21 @@ class SettingsFragment : Fragment() {
                     }
 
                     override fun onNothingSelected(parent: AdapterView<*>?) {}
+                }
+
+                // Theme Switch Setup
+                themeSwitch.isChecked = savedTheme == "dark"
+                themeSwitch.visibility = View.VISIBLE
+
+                themeSwitch.setOnCheckedChangeListener { _, isChecked ->
+                    val newTheme = if (isChecked) "dark" else "light"
+                    userDoc.update("theme", newTheme)
+                        .addOnSuccessListener {
+                            Toast.makeText(requireContext(), "Theme updated to $newTheme", Toast.LENGTH_SHORT).show()
+                        }
+                        .addOnFailureListener {
+                            Toast.makeText(requireContext(), "Failed to update theme", Toast.LENGTH_SHORT).show()
+                        }
                 }
             }
         }
