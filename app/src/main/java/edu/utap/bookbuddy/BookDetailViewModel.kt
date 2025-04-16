@@ -13,6 +13,29 @@ class BookDetailViewModel : ViewModel() {
     private val _reviews = MutableLiveData<List<Review>>()
     val reviews: LiveData<List<Review>> = _reviews
 
+    private val _avgRating = MutableLiveData<Double>()
+    val avgRating: LiveData<Double> = _avgRating
+    private val _numRatings = MutableLiveData<Int>()
+    val numRatings: LiveData<Int> = _numRatings
+
+    fun fetchAvgRating(bookId: String) {
+        db.collection("books")
+            .document(bookId)
+            .get()
+            .addOnSuccessListener { document ->
+                val avg = document.getDouble("avgRating")
+                _avgRating.value = avg ?: 0.0
+
+                val num = document.getLong("numRatings")?.toInt()
+                _numRatings.value = num ?: 0
+            }
+            .addOnFailureListener { exception ->
+                Log.e("BookDetailVM", "Error fetching rating data", exception)
+                _avgRating.value = 0.0
+                _numRatings.value = 0
+            }
+    }
+
     fun fetchBook(bookId: String, onResult: (Book?) -> Unit) {
         db.collection("books")
             .document(bookId)
@@ -58,6 +81,8 @@ class BookDetailViewModel : ViewModel() {
                             )
                             .addOnSuccessListener {
                                 Log.d("BookDetailVM", "Updated avgRating=$avgRating and numRatings=$numRatings")
+                                _avgRating.value = avgRating
+                                _numRatings.value = numRatings
                             }
                             .addOnFailureListener {
                                 Log.e("BookDetailVM", "Failed to update ratings", it)

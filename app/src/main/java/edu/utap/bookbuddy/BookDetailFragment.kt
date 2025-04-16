@@ -64,7 +64,16 @@ class BookDetailFragment : Fragment() {
             }
         }
 
+        viewModel.avgRating.observe(viewLifecycleOwner) { avg ->
+            binding.ratingDisplay.text = String.format("⭐ %.1f", avg)
+        }
+
+        viewModel.numRatings.observe(viewLifecycleOwner) { num ->
+            binding.ratingCountText.text = "($num)"
+        }
+
         viewModel.fetchReviews(bookId)
+        viewModel.fetchAvgRating(bookId)
     }
 
     private fun bindBookToUI(book: Book) {
@@ -72,10 +81,6 @@ class BookDetailFragment : Fragment() {
         binding.bookAuthor.text = book.author
         binding.bookDescription.text = book.description
         currentBook = book
-
-        // ⭐ Show avg rating and number of ratings
-        binding.ratingDisplay.text = "⭐ ${book.avgRating}"
-        binding.ratingCountText.text = "(${book.numRatings})"
 
         Glide.with(requireContext())
             .load(book.coverUrl)
