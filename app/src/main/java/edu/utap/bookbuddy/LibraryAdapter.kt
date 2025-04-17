@@ -11,7 +11,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 
 class LibraryAdapter(
-    private val onBookClick: (Book) -> Unit  // ✅ Accept a click lambda
+    private val onBookClick: (Book) -> Unit,
+    private val onBookLongClick: (Book) -> Unit
 ) : ListAdapter<Book, LibraryAdapter.BookViewHolder>(BookDiffCallback()) {
 
     class BookViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -19,7 +20,7 @@ class LibraryAdapter(
         private val authorTV: TextView = view.findViewById(R.id.authorTextView)
         private val coverIV: ImageView = view.findViewById(R.id.bookCoverImageView)
 
-        fun bind(book: Book, onClick: (Book) -> Unit) {
+        fun bind(book: Book, onClick: (Book) -> Unit, onLongClick: (Book) -> Unit) {
             titleTV.text = book.title
             authorTV.text = "by ${book.author}"
 
@@ -30,7 +31,12 @@ class LibraryAdapter(
                 .into(coverIV)
 
             itemView.setOnClickListener {
-                onClick(book)  // ✅ Pass book to the lambda
+                onClick(book)
+            }
+
+            itemView.setOnLongClickListener {
+                onLongClick(book)
+                true
             }
         }
     }
@@ -42,6 +48,7 @@ class LibraryAdapter(
     }
 
     override fun onBindViewHolder(holder: BookViewHolder, position: Int) {
-        holder.bind(getItem(position), onBookClick)  // ✅ Use lambda here
+        val book = getItem(position)
+        holder.bind(book, onBookClick, onBookLongClick)
     }
 }

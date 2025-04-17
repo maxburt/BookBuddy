@@ -11,6 +11,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.navigation.fragment.findNavController
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import androidx.appcompat.app.AlertDialog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -18,7 +21,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
-
 
 class LibraryFragment : Fragment() {
 
@@ -36,17 +38,22 @@ class LibraryFragment : Fragment() {
         viewModel = ViewModelProvider(this)[LibraryViewModel::class.java]
         val recyclerView = view.findViewById<RecyclerView>(R.id.libraryRecyclerView)
 
-        adapter = LibraryAdapter { book ->
-            downloadBookIfNeeded(book) { localPath ->
-                if (localPath != null) {
-                    val action = LibraryFragmentDirections
-                        .actionLibraryFragmentToReaderFragment(book.id)
-                    findNavController().navigate(action)
-                } else {
-                    Log.e("LibraryFragment", "Failed to download EPUB")
+        adapter = LibraryAdapter(
+            onBookClick = { book ->
+                downloadBookIfNeeded(book) { localPath ->
+                    if (localPath != null) {
+                        val action = LibraryFragmentDirections
+                            .actionLibraryFragmentToReaderFragment(book.id)
+                        findNavController().navigate(action)
+                    } else {
+                        Log.e("LibraryFragment", "Failed to download EPUB")
+                    }
                 }
+            },
+            onBookLongClick = { book ->
+                showDeleteDialog(book)
             }
-        }
+        )
 
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
@@ -78,7 +85,6 @@ class LibraryFragment : Fragment() {
                 val fullUrl = if (book.downloadUrl.startsWith("http")) {
                     book.downloadUrl
                 } else {
-                    // Optional fallback if your DB is missing the full URL
                     "https://firebasestorage.googleapis.com/v0/b/bookbuddy-2bb4b.appspot.com/o/${book.downloadUrl}?alt=media"
                 }
 
@@ -107,4 +113,38 @@ class LibraryFragment : Fragment() {
         }
     }
 
+    private fun showDeleteDialog(book: Book) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Delete Book")
+            .setMessage("Are you sure you want to delete '${book.title}' from your library?")
+            .setPositiveButton("Delete") { _, _ -> deleteBook(book) }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun deleteBook(book: Book) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(uid)
+            .collection("library")
+            .document(book.id)
+            .delete()
+            .addOnSuccessListener {
+                Log.d("LibraryFragment", "Deleted ${book.title} from Firestore")
+
+                // Delete local EPUB file
+                val file = File(requireContext().filesDir, "${book.id}.epub")
+                if (file.exists()) {
+                    file.delete()
+                    Log.d("LibraryFragment", "Deleted local file: ${file.name}")
+                }
+
+                viewModel.fetchUserLibrary()
+            }
+            .addOnFailureListener { e ->
+                Log.e("LibraryFragment", "Failed to delete ${book.title}", e)
+            }
+    }
 }

@@ -13,10 +13,11 @@
 
     <EditText
         android:id="@+id/reviewCommentEditText"
-        android:hint="Write your review..."
-        android:minLines="3"
-        android:gravity="top|start"
-        android:layout_marginTop="12dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:hint="Leave a review..."
+        android:inputType="textCapSentences|textMultiLine|textNoSuggestions"
+        android:importantForAutofill="no"
+        android:maxLines="5"
+        android:imeOptions="actionDone" />
 </LinearLayout>
