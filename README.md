@@ -14,7 +14,7 @@ A no-nonsense ePub reader for Android that lets users browse, download, and read
 - Simple top navigation between Library and Store
 ## Screenshots
 
-| Login Screen | Library | Reader |
+| Login Screen | Store | Reader |
 |--------------|---------|--------|
 | ![Login](screenshots/login.png) | ![Store](screenshots/library.png) | ![Reader](screenshots/reader%20view.png) |
 
