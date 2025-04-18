@@ -16,7 +16,7 @@ A no-nonsense ePub reader for Android that lets users browse, download, and read
 
 | Login Screen | Library | Reader |
 |--------------|---------|--------|
-| ![Login](screenshots/login.png) | ![Library](screenshots/library.png) | ![Reader](screenshots/reader%20view.png) |
+| ![Login](screenshots/login.png) | ![Store](screenshots/library.png) | ![Reader](screenshots/reader%20view.png) |
 
 | Book Detail | Dark Mode Reader | Settings |
 |-------------|------------------|----------|
