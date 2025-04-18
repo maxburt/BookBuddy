@@ -20,14 +20,16 @@ A no-nonsense ePub reader for Android that lets users browse, download, and read
 - **Reader:** Custom `reader.html` with `epub.js` integration  
 - **Auth:** FirebaseUI
 
-## How to Build  
-1. Clone the repo:  
-   `git clone https://github.com/utap-s25/BookBuddy.git`
-2. Open in Android Studio (Giraffe or newer)
-3. Sync Gradle and Build Project  
-4. Run the app on emulator or device  
+## How to Build
 
-> Note: The required Firebase setup (Firestore collections, Storage, Auth) is already configured. You **do not** need to provide a new `google-services.json` — it’s included in the repo.
+1. Clone this repository.
+2. Open the project in Android Studio.
+3. Add your own `google-services.json` file to the `app/` directory.  
+   - You can generate this from your Firebase Console by registering an Android app.
+4. Sync Gradle and build the project.
+5. Run the app on an emulator or physical device.
+
+> 🔐 This project does not include `google-services.json` for security reasons.
 
 ## Credits  
 Created by Max Burt  
