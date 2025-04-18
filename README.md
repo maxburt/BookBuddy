@@ -11,7 +11,16 @@ A no-nonsense ePub reader for Android that lets users browse, download, and read
 - Leave and view reviews with live average rating updates  
 - Customize reading experience: font size, font type, light/dark mode  
 - Offline EPUB reading support via WebView and `epub.js`  
-- Simple top navigation between Library and Store  
+- Simple top navigation between Library and Store
+## Screenshots
+
+| Login Screen | Library | Reader |
+|--------------|---------|--------|
+| ![Login](screenshots/login.png) | ![Library](screenshots/library.png) | ![Reader](screenshots/reader%20view.png) |
+
+| Book Detail | Dark Mode Reader | Settings |
+|-------------|------------------|----------|
+| ![Book Detail](screenshots/book%20detail.png) | ![Dark Reader](screenshots/reader%20view%20dark.png) | ![Settings](screenshots/settings.png) |
 
 ## Tech Stack  
 - **Language:** Kotlin  
